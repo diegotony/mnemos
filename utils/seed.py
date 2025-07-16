@@ -5,8 +5,9 @@ from models.user import User
 from datetime import date
 import os
 import logging
-logger = logging.getLogger(__name__)
+from sqlalchemy.exc import IntegrityError
 
+logger = logging.getLogger(__name__)
 
 DEFAULT_STATUSES = ["active", "paused", "completed", "cancelled","draft","in progress","skiped"]
 DEFAULT_PRIORITIES = ["low", "medium", "high"]
@@ -41,27 +42,32 @@ def init_default_user(db: Session):
 
     if missing:
         print(f"⚠️  Skipping default user creation. Missing: {', '.join(missing)}", flush=True)
-        print("ℹ️  Set these variables in your .env file to auto-create a default user.", flush=True)
-        logger.info("✅ Default user created")
         return
 
-    existing = db.query(User).filter_by(email=email).first()
+    email = email.strip().lower()  # 🔍 limpieza extra
+
+    existing = db.query(User).filter(User.email == email).first()
     if existing:
         print(f"👤 Default user '{email}' already exists (ID: {existing.id})", flush=True)
+        return
+
     try:
         birth_date = date.fromisoformat(birth)
     except ValueError:
-        print("❌ Invalid format for DEFAULT_USER_BIRTH. Use YYYY-MM-DD.", flush=True)
+        print("❌ DEFAULT_USER_BIRTH must be in format YYYY-MM-DD", flush=True)
         return
 
     user = User(
-        name=name,
+        name=name.strip(),
         email=email,
         birth_date=birth_date
     )
 
     db.add(user)
-    db.commit()
-    db.refresh(user)
-    print(f"✅ Default user created: {user.name} (ID: {user.id})", flush=True)
-    
+    try:
+        db.commit()
+        db.refresh(user)
+        print(f"✅ Default user created: {user.name} (ID: {user.id})", flush=True)
+    except IntegrityError:
+        db.rollback()
+        print("❌ Could not create user. It may already exist.", flush=True)

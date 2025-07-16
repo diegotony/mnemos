@@ -10,19 +10,20 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy import text
 
 load_dotenv()
-
 Base.metadata.create_all(bind=engine)
 
+API_V1="/api/v1"
+
 app = FastAPI()
-app.include_router(user.router)
-app.include_router(task.router)
-app.include_router(habit_log.router)
-app.include_router(reminder.router)
-app.include_router(habit_log.router)
-app.include_router(status.router)
-app.include_router(reflection.router)
-app.include_router(priority.router)
-app.include_router(idea.router)
+app.include_router(user.router, prefix=API_V1)
+app.include_router(task.router, prefix=API_V1)
+app.include_router(habit_log.router, prefix=API_V1)
+app.include_router(reminder.router, prefix=API_V1)
+app.include_router(habit_log.router, prefix=API_V1)
+app.include_router(status.router, prefix=API_V1)
+app.include_router(reflection.router, prefix=API_V1)
+app.include_router(priority.router, prefix=API_V1)
+app.include_router(idea.router, prefix=API_V1)
 
 @app.on_event("startup")
 def startup_event():
