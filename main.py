@@ -24,7 +24,6 @@ app.include_router(reflection.router)
 app.include_router(priority.router)
 app.include_router(idea.router)
 
-
 @app.on_event("startup")
 def startup_event():
     DEFAULT_USER_ID = os.getenv("DEFAULT_USER_ID")
