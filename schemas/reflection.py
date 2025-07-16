@@ -14,4 +14,4 @@ class ReflectionRead(ReflectionBase):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True

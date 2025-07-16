@@ -2,17 +2,18 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import date
 
-class TaskBase(BaseModel):
+class IdeaBase(BaseModel):
     title: str
     description: Optional[str] = None
-    due_date: Optional[date] = None
-    is_completed: Optional[bool] = False
+    created_date: Optional[date] = None
     user_id: int
+    category_id: Optional[int] = None
+    priority_id: Optional[int] = None
 
-class TaskCreate(TaskBase):
+class IdeaCreate(IdeaBase):
     pass
 
-class TaskRead(TaskBase):
+class IdeaRead(IdeaBase):
     id: int
 
     class Config:

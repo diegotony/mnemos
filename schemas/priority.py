@@ -1,12 +1,12 @@
 from pydantic import BaseModel
 
-class StatusBase(BaseModel):
+class PriorityBase(BaseModel):
     name: str
 
-class StatusCreate(StatusBase):
+class PriorityCreate(PriorityBase):
     pass
 
-class StatusRead(StatusBase):
+class PriorityRead(PriorityBase):
     id: int
 
     class Config:
