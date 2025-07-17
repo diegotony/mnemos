@@ -12,6 +12,17 @@ class TaskBase(BaseModel):
 class TaskCreate(TaskBase):
     pass
 
+
+class TaskUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    due_date: Optional[date] = None
+    status_id: Optional[int] = None
+    priority_id: Optional[int] = None
+    habit_id: Optional[int] = None
+    reminder_id: Optional[int] = None
+    user_id: Optional[int] = None
+
 class TaskRead(TaskBase):
     id: int
 

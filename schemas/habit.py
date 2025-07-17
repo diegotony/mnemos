@@ -19,6 +19,7 @@ class HabitCreate(HabitBase):
 
 class HabitRead(HabitBase):
     id: int
+    start_date: Optional[date] = None  # permite nulo
 
     class Config:
         from_attributes = True

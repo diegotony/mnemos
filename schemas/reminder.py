@@ -13,6 +13,7 @@ class ReminderCreate(ReminderBase):
 
 class ReminderRead(ReminderBase):
     id: int
+    scheduled_time: Optional[datetime] = None  # permite nulo
 
     class Config:
         from_attributes = True

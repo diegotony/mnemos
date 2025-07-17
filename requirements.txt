@@ -5,3 +5,4 @@ python-dotenv
 psycopg2-binary  # solo necesario si usas PostgreSQL
 pydantic[email]
 pytz
+rich
