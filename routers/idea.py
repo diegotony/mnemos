@@ -22,10 +22,9 @@ def get_db():
 def create_idea(
     idea: IdeaCreate,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user_id),
 ):
     logger.debug("Creating Idea...")
-    db_idea = Idea(**idea.dict(), user_id=user_id)
+    db_idea = Idea(**idea.dict())
     logger.debug("Preparing Creating Idea...")
     db.add(db_idea)
     db.commit()

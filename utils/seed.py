@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from models.status import Status
 from models.priority import Priority
+from models.category import Category
+from models.time_bucket import TimeBucket
 from models.user import User
 from datetime import date
 import os
@@ -11,6 +13,14 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_STATUSES = ["active", "paused", "completed", "cancelled","draft","in progress","skiped"]
 DEFAULT_PRIORITIES = ["low", "medium", "high"]
+DEFAULT_CATEGORIES = ["games", "work", "life"]
+DEFAULT_TIME_BUCKETS = [
+    {"name": "Hoy", "slug": "today"},
+    {"name": "Mañana", "slug": "tomorrow"},
+    {"name": "Esta semana", "slug": "this_week"},
+    {"name": "Este mes", "slug": "this_month"},
+    {"name": "Algún día", "slug": "someday"},
+]
 
 def init_statuses(db: Session):
     for name in DEFAULT_STATUSES:
@@ -24,6 +34,20 @@ def init_priorities(db):
         exists = db.query(Priority).filter_by(name=name).first()
         if not exists:
             db.add(Priority(name=name))
+    db.commit()
+
+def init_categories(db):
+    for name in DEFAULT_CATEGORIES:
+        exists = db.query(Category).filter_by(name=name).first()
+        if not exists:
+            db.add(Category(name=name))
+    db.commit()
+
+def init_time_buckets(db: Session):
+    for bucket in DEFAULT_TIME_BUCKETS:
+        exists = db.query(TimeBucket).filter_by(slug=bucket["slug"]).first()
+        if not exists:
+            db.add(TimeBucket(**bucket))
     db.commit()
 
 

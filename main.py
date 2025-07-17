@@ -2,8 +2,26 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from database import SessionLocal, Base, engine
 from models import *
-from routers import user, task, habit_log,reminder,habit, status, reflection,priority,idea
-from utils.seed import init_statuses,init_priorities,init_default_user
+from routers import (
+    user,
+    task,
+    habit_log,
+    reminder,
+    habit,
+    status,
+    reflection,
+    priority,
+    idea,
+    category,
+    time_bucket
+)
+from utils.seed import (
+    init_statuses,
+    init_priorities,
+    init_default_user,
+    init_categories,
+    init_time_buckets
+)
 import os
 from dotenv import load_dotenv
 from sqlalchemy.exc import OperationalError
@@ -12,7 +30,7 @@ from sqlalchemy import text
 load_dotenv()
 Base.metadata.create_all(bind=engine)
 
-API_V1="/api/v1"
+API_V1 = "/api/v1"
 
 app = FastAPI()
 app.include_router(user.router, prefix=API_V1)
@@ -24,6 +42,9 @@ app.include_router(status.router, prefix=API_V1)
 app.include_router(reflection.router, prefix=API_V1)
 app.include_router(priority.router, prefix=API_V1)
 app.include_router(idea.router, prefix=API_V1)
+app.include_router(category.router, prefix=API_V1)
+app.include_router(time_bucket.router, prefix=API_V1)
+
 
 @app.on_event("startup")
 def startup_event():
@@ -42,6 +63,8 @@ def startup_event():
         init_statuses(db)
         init_priorities(db)
         init_default_user(db)
+        init_categories(db)
+        init_time_buckets(db)
         print("📋 Statuses and priorities seeded.")
     except Exception as e:
         print(f"❌ Startup error: {e}", flush=True)
@@ -51,9 +74,11 @@ def startup_event():
     finally:
         db.close()
 
+
 @app.get("/")
 def hello():
     return {"message": "Hello World"}
+
 
 # @app.post("/usuarios/")
 # def crear_usuario(nombre: str, email: str, db: Session = Depends(get_db)):

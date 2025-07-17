@@ -3,12 +3,10 @@ from typing import Optional
 from datetime import date
 
 class IdeaBase(BaseModel):
-    title: str
-    description: Optional[str] = None
+    text: str
     created_date: Optional[date] = None
     user_id: int
     category_id: Optional[int] = None
-    priority_id: Optional[int] = None
 
 class IdeaCreate(IdeaBase):
     pass

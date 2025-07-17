@@ -6,8 +6,10 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False)
-    description = Column(String, nullable=True)
-    due_date = Column(DateTime(timezone=True))
+    text = Column(String, nullable=False)
+    due_date = Column(DateTime(timezone=True),  nullable=True)
     is_completed = Column(Boolean, default=False)
     user_id = Column(Integer, ForeignKey("users.id"))
+    status_id = Column(Integer, ForeignKey("statuses.id"))
+    priority_id = Column(Integer, ForeignKey("priorities.id"))
+    time_bucket_id = Column(Integer, ForeignKey("time_buckets.id"))
