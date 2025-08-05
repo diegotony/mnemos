@@ -1,17 +1,20 @@
 from sqlalchemy.orm import Session
 from models.status import Status
 from models.priority import Priority
-from models.category import Category
-from models.time_bucket import TimeBucket
 from models.user import User
 from datetime import date
 import os
 import logging
-from sqlalchemy.exc import IntegrityError
 
-logger = logging.getLogger(__name__)
-
-DEFAULT_STATUSES = ["active", "paused", "completed", "cancelled","draft","in progress","skiped"]
+DEFAULT_STATUSES = [
+    "active",
+    "paused",
+    "completed",
+    "cancelled",
+    "draft",
+    "in progress",
+    "skiped",
+]
 DEFAULT_PRIORITIES = ["low", "medium", "high"]
 DEFAULT_CATEGORIES = ["games", "work", "life"]
 DEFAULT_TIME_BUCKETS = [
@@ -22,12 +25,14 @@ DEFAULT_TIME_BUCKETS = [
     {"name": "Algún día", "slug": "someday"},
 ]
 
+
 def init_statuses(db: Session):
     for name in DEFAULT_STATUSES:
         exists = db.query(Status).filter_by(name=name).first()
         if not exists:
             db.add(Status(name=name))
     db.commit()
+
 
 def init_priorities(db):
     for name in DEFAULT_PRIORITIES:
@@ -36,19 +41,21 @@ def init_priorities(db):
             db.add(Priority(name=name))
     db.commit()
 
-def init_categories(db):
-    for name in DEFAULT_CATEGORIES:
-        exists = db.query(Category).filter_by(name=name).first()
-        if not exists:
-            db.add(Category(name=name))
-    db.commit()
 
-def init_time_buckets(db: Session):
-    for bucket in DEFAULT_TIME_BUCKETS:
-        exists = db.query(TimeBucket).filter_by(slug=bucket["slug"]).first()
-        if not exists:
-            db.add(TimeBucket(**bucket))
-    db.commit()
+# def init_categories(db):
+#     for name in DEFAULT_CATEGORIES:
+#         exists = db.query(Category).filter_by(name=name).first()
+#         if not exists:
+#             db.add(Category(name=name))
+#     db.commit()
+
+
+# def init_time_buckets(db: Session):
+#     for bucket in DEFAULT_TIME_BUCKETS:
+#         exists = db.query(TimeBucket).filter_by(slug=bucket["slug"]).first()
+#         if not exists:
+#             db.add(TimeBucket(**bucket))
+#     db.commit()
 
 
 def init_default_user(db: Session):
@@ -65,14 +72,19 @@ def init_default_user(db: Session):
         missing.append("DEFAULT_USER_BIRTH")
 
     if missing:
-        print(f"⚠️  Skipping default user creation. Missing: {', '.join(missing)}", flush=True)
+        print(
+            f"⚠️  Skipping default user creation. Missing: {', '.join(missing)}",
+            flush=True,
+        )
         return
 
     email = email.strip().lower()  # 🔍 limpieza extra
 
     existing = db.query(User).filter(User.email == email).first()
     if existing:
-        print(f"👤 Default user '{email}' already exists (ID: {existing.id})", flush=True)
+        print(
+            f"👤 Default user '{email}' already exists (ID: {existing.id})", flush=True
+        )
         return
 
     try:
@@ -81,11 +93,7 @@ def init_default_user(db: Session):
         print("❌ DEFAULT_USER_BIRTH must be in format YYYY-MM-DD", flush=True)
         return
 
-    user = User(
-        name=name.strip(),
-        email=email,
-        birth_date=birth_date
-    )
+    user = User(name=name.strip(), email=email, birth_date=birth_date)
 
     db.add(user)
     try:
