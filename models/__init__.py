@@ -4,6 +4,7 @@ from .status import Status
 from .priority import Priority
 from .project import Project
 from .area import Area
+from .inbox_item import InboxItem
 
 # from .habit import Habit
 # from .habit_log import HabitLog
