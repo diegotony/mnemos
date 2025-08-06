@@ -8,6 +8,7 @@ from schemas.task import TaskCreate, TaskRead, TaskUpdate
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -15,7 +16,13 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/",
+    response_model=TaskRead,
+    response_model_exclude_none=True,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     db_task = Task(**task.dict())
     db.add(db_task)
@@ -23,23 +30,22 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
     db.refresh(db_task)
     return db_task
 
+
 @router.get("/", response_model=List[TaskRead])
 def get_tasks(db: Session = Depends(get_db)):
     return db.query(Task).all()
 
-@router.get("/{task_id}", response_model=TaskRead)
+
+@router.get("/{task_id}", response_model=TaskRead, response_model_exclude_none=True)
 def get_task(task_id: int, db: Session = Depends(get_db)):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
     return db_task
 
+
 @router.put("/{task_id}", response_model=TaskRead)
-def update_task(
-    task_id: int,
-    task_in: TaskUpdate,
-    db: Session = Depends(get_db)
-):
+def update_task(task_id: int, task_in: TaskUpdate, db: Session = Depends(get_db)):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -51,6 +57,7 @@ def update_task(
     db.commit()
     db.refresh(db_task)
     return db_task
+
 
 @router.delete("/{task_id}", response_model=TaskRead)
 def delete_task(task_id: int, db: Session = Depends(get_db)):

@@ -1,5 +1,10 @@
 from .user import User
 from .task import Task
+from .status import Status
+from .priority import Priority
+from .project import Project
+from .area import Area
+
 # from .habit import Habit
 # from .habit_log import HabitLog
 # from .reflection import Reflection

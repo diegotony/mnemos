@@ -2,12 +2,7 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from database import SessionLocal, Base, engine
 from models import *
-from routers import (
-    user,
-    task,
-    status,
-    priority,
-)
+from routers import user, task, status, priority, project,area
 from utils.seed import (
     init_statuses,
     init_priorities,
@@ -28,6 +23,8 @@ app.include_router(user.router, prefix=API_V1)
 app.include_router(task.router, prefix=API_V1)
 app.include_router(status.router, prefix=API_V1)
 app.include_router(priority.router, prefix=API_V1)
+app.include_router(project.router, prefix=API_V1)
+app.include_router(area.router, prefix=API_V1)
 
 
 @app.on_event("startup")
@@ -62,10 +59,3 @@ def hello():
     return {"message": "Hello World"}
 
 
-# @app.post("/usuarios/")
-# def crear_usuario(nombre: str, email: str, db: Session = Depends(get_db)):
-#     nuevo_usuario = Usuario(nombre=nombre, email=email)
-#     db.add(nuevo_usuario)
-#     db.commit()
-#     db.refresh(nuevo_usuario)
-#     return nuevo_usuario

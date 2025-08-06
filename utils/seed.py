@@ -15,8 +15,7 @@ DEFAULT_STATUSES = [
     "in progress",
     "skiped",
 ]
-DEFAULT_PRIORITIES = ["low", "medium", "high"]
-DEFAULT_CATEGORIES = ["games", "work", "life"]
+DEFAULT_PRIORITIES = ["low", "medium", "high", "none"]
 DEFAULT_TIME_BUCKETS = [
     {"name": "Hoy", "slug": "today"},
     {"name": "Mañana", "slug": "tomorrow"},
