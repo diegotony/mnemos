@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from database import SessionLocal, Base, engine
 from models import *
-from routers import user, task, status, priority, project, area, inbox_item
+from routers import user, task, status, priority, project, area, inbox_item, idea
 from utils.seed import (
     init_statuses,
     init_priorities,
@@ -26,6 +26,7 @@ app.include_router(priority.router, prefix=API_V1)
 app.include_router(project.router, prefix=API_V1)
 app.include_router(area.router, prefix=API_V1)
 app.include_router(inbox_item.router, prefix=API_V1)
+app.include_router(idea.router, prefix=API_V1)
 
 
 @app.on_event("startup")
