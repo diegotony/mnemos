@@ -10,6 +10,7 @@ from utils.seed import (
 )
 from utils.logger import logger
 from utils.telemetry import setup_opentelemetry, instrument_fastapi
+from utils.config import get_priority_config
 import os
 from dotenv import load_dotenv
 from sqlalchemy.exc import OperationalError
@@ -74,6 +75,11 @@ def startup_event():
         logger.warning(
             "⚠️  DEFAULT_USER_ID not set — the API expects user_id in requests."
         )
+
+    # Validar configuración de priorización
+    logger.info("🔧 Validando configuración de priorización...")
+    priority_config = get_priority_config()
+
     db = SessionLocal()
     try:
         # Probar conexión a la base de datos

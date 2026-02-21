@@ -5,7 +5,8 @@ Proporciona acceso a eventos del calendario con diferentes filtros.
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from sqlalchemy import func
+from typing import List, Optional, Union, Dict
 from datetime import datetime
 
 from models.calendar_event import CalendarEvent
@@ -14,10 +15,15 @@ from schemas.calendar_event import (
     CalendarEventSummary,
     CalendarEventCreate,
     CalendarEventUpdate,
+    PrioritizedEventsResponse,
+    PrioritizedEventsConfig,
+    PrioritizedEventsCounts,
 )
 from dependencies.database import get_db
 from services.google_calendar import get_calendar_service
 from utils.logger import logger
+from utils.timezone import parse_date_param
+from utils.config import get_priority_config
 
 
 router = APIRouter(prefix="/calendar", tags=["Calendar"])
@@ -66,10 +72,13 @@ def get_categories():
     return categories
 
 
-@router.get("/sync/today", response_model=List[CalendarEventSummary])
+@router.api_route(
+    "/sync/today", methods=["GET", "POST"], response_model=List[CalendarEventSummary]
+)
 def sync_today_events(db: Session = Depends(get_db)):
     """
     Sincroniza y obtiene eventos del día actual desde Google Calendar.
+    Acepta GET y POST.
     """
     calendar_service = get_calendar_service()
 
@@ -123,10 +132,13 @@ def sync_today_events(db: Session = Depends(get_db)):
         )
 
 
-@router.get("/sync/week", response_model=List[CalendarEventSummary])
+@router.api_route(
+    "/sync/week", methods=["GET", "POST"], response_model=List[CalendarEventSummary]
+)
 def sync_week_events(db: Session = Depends(get_db)):
     """
     Sincroniza y obtiene eventos de la semana actual desde Google Calendar.
+    Acepta GET y POST.
     """
     calendar_service = get_calendar_service()
 
@@ -177,10 +189,13 @@ def sync_week_events(db: Session = Depends(get_db)):
         )
 
 
-@router.get("/sync/month", response_model=List[CalendarEventSummary])
+@router.api_route(
+    "/sync/month", methods=["GET", "POST"], response_model=List[CalendarEventSummary]
+)
 def sync_month_events(db: Session = Depends(get_db)):
     """
     Sincroniza y obtiene eventos del mes actual desde Google Calendar.
+    Acepta GET y POST.
     """
     calendar_service = get_calendar_service()
 
@@ -231,13 +246,16 @@ def sync_month_events(db: Session = Depends(get_db)):
         )
 
 
-@router.get("/sync/critical", response_model=List[CalendarEventSummary])
+@router.api_route(
+    "/sync/critical", methods=["GET", "POST"], response_model=List[CalendarEventSummary]
+)
 def sync_critical_events(
     days_ahead: int = Query(7, ge=1, le=30, description="Días hacia adelante"),
     db: Session = Depends(get_db),
 ):
     """
     Sincroniza y obtiene eventos críticos (próximos N días) desde Google Calendar.
+    Acepta GET y POST.
 
     - **days_ahead**: Número de días hacia adelante (default: 7, max: 30)
     """
@@ -292,7 +310,9 @@ def sync_critical_events(
         )
 
 
-@router.get("/events", response_model=List[CalendarEventRead])
+@router.get(
+    "/events", response_model=Union[List[CalendarEventRead], PrioritizedEventsResponse]
+)
 def list_cached_events(
     skip: int = 0,
     limit: int = 100,
@@ -301,6 +321,12 @@ def list_cached_events(
     search: Optional[str] = Query(None, description="Buscar en título y descripción"),
     start_date: Optional[datetime] = Query(None, description="Fecha de inicio (desde)"),
     end_date: Optional[datetime] = Query(None, description="Fecha de fin (hasta)"),
+    date: Optional[str] = Query(
+        None, description="Fecha relativa: 'today', 'tomorrow', o 'YYYY-MM-DD'"
+    ),
+    prioritized: bool = Query(
+        False, description="Retornar eventos agrupados por prioridad"
+    ),
     db: Session = Depends(get_db),
 ):
     """
@@ -308,16 +334,29 @@ def list_cached_events(
 
     - **skip**: Número de registros a saltar (default: 0)
     - **limit**: Número máximo de registros (default: 100)
-    - **category**: Filtrar por categoría (TRABAJO, SALUD, OCIO, RUTINA)
+    - **category**: Filtrar por categoría (TRABAJO, SALUD, OCIO, RUTINA) - case insensitive
     - **priority**: Filtrar por prioridad (low, medium, high, critical)
     - **search**: Buscar texto en título y descripción (case-insensitive)
     - **start_date**: Mostrar eventos desde esta fecha (ISO format: 2026-02-20T00:00:00)
     - **end_date**: Mostrar eventos hasta esta fecha (ISO format: 2026-02-28T23:59:59)
+    - **date**: Fecha relativa ('today', 'tomorrow', 'YYYY-MM-DD') - sobrescribe start_date/end_date
+    - **prioritized**: Si es True, retorna eventos agrupados por prioridad
     """
+
+    # Manejar parámetro 'date' (sobrescribe start_date y end_date)
+    if date:
+        try:
+            start_date, end_date = parse_date_param(date)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
     query = db.query(CalendarEvent)
 
+    # Filtro por categoría (case-insensitive)
     if category:
-        query = query.filter(CalendarEvent.category == category)
+        # Usar func.upper() para hacer la comparación case-insensitive
+        query = query.filter(func.upper(CalendarEvent.category) == category.upper())
+
     if priority:
         query = query.filter(CalendarEvent.priority == priority)
 
@@ -335,10 +374,77 @@ def list_cached_events(
     if end_date:
         query = query.filter(CalendarEvent.end_datetime <= end_date)
 
-    events = (
-        query.order_by(CalendarEvent.start_datetime).offset(skip).limit(limit).all()
+    # Ordenar por fecha de inicio
+    query = query.order_by(CalendarEvent.start_datetime)
+
+    # Si no se pide priorización, retornar lista plana (backward compatibility)
+    if not prioritized:
+        events = query.offset(skip).limit(limit).all()
+        return events
+
+    # Modo priorizado: agrupar eventos
+    all_events = query.offset(skip).limit(limit).all()
+
+    # Obtener configuración de priorización
+    config = get_priority_config()
+
+    # Inicializar grupos
+    high_priority_events = []
+    regular_events = []
+    routine_events = []
+    category_counts: Dict[str, int] = {}
+
+    for event in all_events:
+        # Contar por categoría
+        event_category = event.category
+        if event_category:
+            category_counts[event_category] = category_counts.get(event_category, 0) + 1
+
+        # Clasificar evento
+        # 1. Rutinas (basado en categoría)
+        if event_category and event_category.upper() == config.routine_category.upper():
+            routine_events.append(event)
+
+        # 2. Alta prioridad (categoría + nivel de prioridad)
+        elif (
+            # Tiene categoría de alta prioridad
+            (
+                event_category
+                and event_category.upper()
+                in [cat.upper() for cat in config.high_priority_categories]
+            )
+            and
+            # Y tiene nivel de prioridad alto
+            (
+                event.priority
+                and event.priority.lower()
+                in [lvl.lower() for lvl in config.high_priority_levels]
+            )
+        ):
+            high_priority_events.append(event)
+
+        # 3. Regular (todo lo demás)
+        else:
+            regular_events.append(event)
+
+    # Construir respuesta
+    return PrioritizedEventsResponse(
+        high_priority=high_priority_events,
+        regular=regular_events,
+        routines=routine_events,
+        counts=PrioritizedEventsCounts(
+            high_priority=len(high_priority_events),
+            regular=len(regular_events),
+            routines=len(routine_events),
+            total=len(all_events),
+            by_category=category_counts,
+        ),
+        config=PrioritizedEventsConfig(
+            high_priority_categories=config.high_priority_categories,
+            high_priority_levels=config.high_priority_levels,
+            routine_category=config.routine_category,
+        ),
     )
-    return events
 
 
 @router.get("/events/{event_id}", response_model=CalendarEventRead)
