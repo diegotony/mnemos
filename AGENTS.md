@@ -1,0 +1,12 @@
+- Hola, este es un proyecto para gestionar mi tiempo se llama mnemos
+- Esta api gestiona ideas, inbox q vendria a ser cosas q recoleto en el dia y las tengo guardadas
+- Esto es una api hecha es fastapi
+- A futuro quiero usar el api de google calendar para obtener los eventos q tengo ahi
+- Como tambien a futuro quiero usar librerias de fronend de python como nicegui y streamlit para poder mostrar la informacion
+- este proyecto usa uv como gestor de paquetes
+- Manten el codigo limpio, mantenible y simple de leer
+- usar buenas practicas de seguridad
+- Vamos a usar docker a futuro para empaquetar la app
+- documentemos la integracion de manera q sea entendible y muestres el enfoques q usaste para la solucion, produra usar graficos
+- Se conciso con tus respuestas 
+- esto se integrara con telegram de una manera organica y simple, no queremos spam innesesario

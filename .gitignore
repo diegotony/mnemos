@@ -61,6 +61,14 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Database files
+*.db
+*.db-journal
+
+# Google Calendar credentials
+credentials/*.json
+!credentials/.gitkeep
+
 # Flask stuff:
 instance/
 .webassets-cache

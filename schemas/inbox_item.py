@@ -9,7 +9,7 @@ from models.inbox_item import SourceType
 class InboxItemBase(BaseModel):
     user_id: Optional[int] = None
     content: str
-    status_id: Optional[int] = 5
+    status_id: Optional[int] = None
     source: SourceType
 
 
@@ -28,4 +28,4 @@ class InboxItemRead(InboxItemBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True

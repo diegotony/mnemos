@@ -3,12 +3,12 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Enum as SQ
 from sqlalchemy.sql import func
 from database import Base
 
-class SourceType(str, Enum):
-    manual  = "manual"
-    cli     = "cli"
-    web     = "web"
-    discord = "discord"
 
+class SourceType(str, Enum):
+    manual = "manual"
+    cli = "cli"
+    web = "web"
+    discord = "discord"
 
 
 class InboxItem(Base):
@@ -20,9 +20,9 @@ class InboxItem(Base):
     created_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
-    status_id = Column(Integer, ForeignKey("statuses.id"), default=5)
-    source     = Column(
+    status_id = Column(Integer, ForeignKey("statuses.id"), nullable=True)
+    source = Column(
         SQLEnum(SourceType, name="source_type", native_enum=True),
         nullable=False,
-        default=SourceType.manual        # ahora es una cadena (SourceType es subclass de str)
+        default=SourceType.manual,
     )
