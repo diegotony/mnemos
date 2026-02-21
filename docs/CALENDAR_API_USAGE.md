@@ -95,6 +95,144 @@ curl "http://localhost:8000/api/v1/calendar/events?category=TRABAJO"
 
 ---
 
+## 🎯 Priorización de Eventos (NUEVO)
+
+Mnemos permite obtener eventos agrupados por nivel de importancia, facilitando la organización y visualización de lo más relevante.
+
+### Configuración
+
+En tu archivo `.env` puedes configurar:
+
+```env
+# Categorías consideradas de alta prioridad (separadas por coma)
+HIGH_PRIORITY_CATEGORIES=TRABAJO
+
+# Niveles de prioridad considerados altos (separadas por coma)
+HIGH_PRIORITY_LEVELS=critical,high
+
+# Categoría para eventos de rutina
+ROUTINE_CATEGORY=RUTINA
+```
+
+### Uso del Parámetro `prioritized`
+
+Cuando usas `?prioritized=true`, el endpoint retorna un objeto con eventos agrupados:
+
+```bash
+GET /api/v1/calendar/events?date=today&prioritized=true
+```
+
+**Response:**
+```json
+{
+  "high_priority": [
+    {
+      "id": 1,
+      "summary": "Reunión cliente",
+      "category": "TRABAJO",
+      "priority": "critical",
+      "start_datetime": "2026-02-20T10:00:00",
+      "end_datetime": "2026-02-20T11:30:00"
+    }
+  ],
+  "regular": [
+    {
+      "id": 3,
+      "summary": "Gym",
+      "category": "SALUD",
+      "priority": "medium",
+      "start_datetime": "2026-02-20T18:00:00",
+      "end_datetime": "2026-02-20T19:00:00"
+    }
+  ],
+  "routines": [
+    {
+      "id": 5,
+      "summary": "Desayuno",
+      "category": "RUTINA",
+      "start_datetime": "2026-02-20T07:00:00",
+      "end_datetime": "2026-02-20T07:30:00"
+    }
+  ],
+  "counts": {
+    "high_priority": 1,
+    "regular": 1,
+    "routines": 1,
+    "total": 3,
+    "by_category": {
+      "TRABAJO": 1,
+      "SALUD": 1,
+      "RUTINA": 1
+    }
+  },
+  "config": {
+    "high_priority_categories": ["TRABAJO"],
+    "high_priority_levels": ["critical", "high"],
+    "routine_category": "RUTINA"
+  }
+}
+```
+
+### Lógica de Agrupación
+
+1. **high_priority**: Eventos que cumplen AMBAS condiciones:
+   - Categoría está en `HIGH_PRIORITY_CATEGORIES`
+   - Prioridad está en `HIGH_PRIORITY_LEVELS`
+
+2. **routines**: Eventos cuya categoría es igual a `ROUTINE_CATEGORY`
+
+3. **regular**: Todos los demás eventos
+
+### Filtros Relativos de Fecha
+
+El parámetro `date` acepta valores relativos y absolutos:
+
+```bash
+# Hoy
+GET /api/v1/calendar/events?date=today
+
+# Mañana
+GET /api/v1/calendar/events?date=tomorrow
+
+# Fecha específica
+GET /api/v1/calendar/events?date=2026-02-25
+```
+
+Si `date` está presente, **sobrescribe** `start_date` y `end_date`.
+
+### Combinaciones Útiles
+
+**Solo alta prioridad de hoy:**
+```bash
+GET /api/v1/calendar/events?date=today&prioritized=true
+# Ver campo "high_priority" en la respuesta
+```
+
+**Solo TRABAJO de hoy, priorizado:**
+```bash
+GET /api/v1/calendar/events?date=today&category=TRABAJO&prioritized=true
+```
+
+**Solo rutinas de mañana:**
+```bash
+GET /api/v1/calendar/events?date=tomorrow&category=RUTINA
+```
+
+### Filtro de Categoría Case-Insensitive
+
+El filtro por categoría ahora es **case-insensitive**:
+
+```bash
+# Todos retornan lo mismo
+GET /api/v1/calendar/events?category=TRABAJO
+GET /api/v1/calendar/events?category=trabajo
+GET /api/v1/calendar/events?category=Trabajo
+```
+
+Si la categoría no existe, retorna un array vacío `[]` (no da error).
+
+---
+
 ## Ejemplos de Uso
 
 ### 1. Crear un Evento
@@ -198,6 +336,24 @@ GET /api/v1/calendar/events?search=gym
 ```bash
 GET /api/v1/calendar/events?start_date=2026-02-20T00:00:00&end_date=2026-02-28T23:59:59
 # Muestra eventos entre estas fechas
+```
+
+**Filtrar por fecha relativa (NUEVO):**
+```bash
+GET /api/v1/calendar/events?date=today
+# Eventos de hoy
+
+GET /api/v1/calendar/events?date=tomorrow
+# Eventos de mañana
+
+GET /api/v1/calendar/events?date=2026-02-25
+# Eventos de una fecha específica
+```
+
+**Obtener eventos priorizados (NUEVO):**
+```bash
+GET /api/v1/calendar/events?date=today&prioritized=true
+# Retorna eventos agrupados por prioridad: high_priority, regular, routines
 ```
 
 **Combinado - múltiples filtros:**
@@ -398,6 +554,16 @@ GET /api/v1/calendar/events?start_date=2026-02-20T00:00:00
 ## Errores Comunes
 
 ### 400 Bad Request
+
+**Error de fecha inválida:**
+```json
+{
+  "detail": "Invalid date format. Use 'today', 'tomorrow', or 'YYYY-MM-DD'"
+}
+```
+**Solución:** Usa uno de los formatos válidos: `today`, `tomorrow`, o `YYYY-MM-DD`.
+
+**Error de rango de fechas:**
 ```json
 {
   "detail": "end_datetime must be after start_datetime"

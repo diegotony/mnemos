@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 
 class CalendarEventBase(BaseModel):
@@ -60,3 +60,31 @@ class CalendarEventSummary(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PrioritizedEventsConfig(BaseModel):
+    """Configuración de priorización aplicada"""
+
+    high_priority_categories: List[str]
+    high_priority_levels: List[str]
+    routine_category: str
+
+
+class PrioritizedEventsCounts(BaseModel):
+    """Contadores de eventos por grupo"""
+
+    high_priority: int
+    regular: int
+    routines: int
+    total: int
+    by_category: Dict[str, int]
+
+
+class PrioritizedEventsResponse(BaseModel):
+    """Respuesta cuando prioritized=true"""
+
+    high_priority: List[CalendarEventRead]
+    regular: List[CalendarEventRead]
+    routines: List[CalendarEventRead]
+    counts: PrioritizedEventsCounts
+    config: PrioritizedEventsConfig
